@@ -3,6 +3,7 @@
 import LocalClient from './LocalClient'
 import {Id} from './terms'
 import Fact from './Fact'
+import EventEmitter from 'events'
 
 function flatten(obj) {
   for (let prop in obj) {
@@ -21,10 +22,12 @@ function difference(setA, setB) {
 
 export default class RoomDB extends EventEmitter {
   constructor() {
+    super()
     this._factMap = new Map();
     this._subscriptions = new Set();
   }
 
+/*
   onAddListener(pattern, callback) {
     this._subscriptions.add(pattern)
     this.select(pattern).doAll(callback)
@@ -36,6 +39,7 @@ export default class RoomDB extends EventEmitter {
     this.select(pattern).doAll(callback)
     return super(pattern, callback)
   }
+  */
 
   select(...jsonPatterns) {
     const patterns = jsonPatterns.map(jsonPattern => Fact.fromJSON(jsonPattern));
@@ -58,18 +62,22 @@ export default class RoomDB extends EventEmitter {
     }
   }
 
+  // FIXME: can we just use apply or something magic?
+  // how do I create nice decorators?
   _emitChanges(fn, ...args) {
-    const beforeFacts = new Map();
-    subcriptions.forEach(pattern => {
+    // FIXME: does this copy?
+    const subscriptions = this._subscriptions
+    const beforeFacts = new Map()
+    subscriptions.forEach(pattern => {
       this.select(pattern).doAll(solutions => {
         beforeFacts.set(pattern, new Set(solutions))
       })
     })
 
-    fn(args)
+    fn(...args)
 
-    const afterFacts = new Map();
-    subcriptions.forEach(pattern => {
+    const afterFacts = new Map()
+    subscriptions.forEach(pattern => {
       this.select(pattern).doAll(solutions => {
         afterFacts.set(pattern, new Set(solutions))
       })
@@ -78,31 +86,36 @@ export default class RoomDB extends EventEmitter {
     subscriptions.forEach(pattern => {
       const before = beforeFacts.get(pattern)
       const after = afterFacts.get(pattern)
-      const assertions = Array.from(after.difference(before))
-      const retractions = Array.from(before.difference(after))
+      const assertions = Array.from(difference(after, before))
+      const retractions = Array.from(difference(before, after))
 
       if (assertions.length + retractions.length) {
         this.emit(pattern, { pattern, assertions, retractions })
       }
-    }
+    })
   }
 
-  assert(clientId, factJSON) {
-    _emitChanges(_assert, clientId, factJSON)
+  assert(...args) {
+    const assert = this._assert.bind(this, ...args)
+    this._emitChanges(assert)
   }
 
   _assert(clientId, factJSON) {
-    const fact = Fact.fromJSON(factJSON);
+    if (factJSON === undefined) {
+      throw new Error('factJSON is undefined')
+    }
+    const fact = Fact.fromJSON(factJSON)
+
     if (fact.hasVariablesOrWildcards()) {
       throw new Error('cannot assert a fact that has variables or wildcards!');
     }
     fact.asserter = clientId;
-
     this._factMap.set(fact.toString(), fact);
   }
 
-  retract(clientId, factJSON) {
-    _emitChanges(_retract, clientId, factJSON)
+  retract(...args) {
+    const retract = this._retract.bind(this, ...args)
+    this._emitChanges(retract)
   }
 
   _retract(clientId, factJSON) {
