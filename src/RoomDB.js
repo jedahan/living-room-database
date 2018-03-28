@@ -62,9 +62,7 @@ export default class RoomDB extends EventEmitter {
     }
   }
 
-  // FIXME: can we just use apply or something magic?
-  // how do I create nice decorators?
-  _emitChanges(fn, ...args) {
+  _emitChanges(fn) {
     // FIXME: does this copy?
     const subscriptions = this._subscriptions
     const beforeFacts = new Map()
@@ -74,7 +72,7 @@ export default class RoomDB extends EventEmitter {
       })
     })
 
-    fn(...args)
+    fn()
 
     const afterFacts = new Map()
     subscriptions.forEach(pattern => {
