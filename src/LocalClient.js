@@ -9,6 +9,10 @@ export default class LocalClient extends AbstractClient {
     this._db = db;
   }
 
+  subscribe(...patternStrings, fn) {
+    return this._db.addListener(patternStrings, fn)
+  }
+
   select(...patternStrings) {
     const patterns = patternStrings.map(p =>
       p instanceof Array ?
