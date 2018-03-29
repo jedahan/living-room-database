@@ -33,7 +33,6 @@ class Fact {
 }
 
 Fact.fromJSON = jsonTerms => {
-  console.dir(jsonTerms)
   return new Fact(jsonTerms.map(jsonTerm => Term.fromJSON(jsonTerm)))
 }
 

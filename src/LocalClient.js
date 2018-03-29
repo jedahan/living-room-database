@@ -9,8 +9,14 @@ export default class LocalClient extends AbstractClient {
     this._db = db
   }
 
-  subscribe (patterns, fn) {
-    return this._db.subscribe(patterns, fn)
+  /**
+   * @param [`selectstring`, `another`] select string
+   * @param callback callback
+   */
+
+  subscribe (patternStrings, callback) {
+    const jsonPatterns = patternStrings.map(patternString => this._toJSONFactOrPattern(patternString))
+    return this._db.on(JSON.stringify(jsonPatterns), callback)
   }
 
   select (...patternStrings) {

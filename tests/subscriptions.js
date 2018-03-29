@@ -7,10 +7,19 @@ test('assert adds to the log', async t => {
   const room = new RoomDB()
   const client = room.client()
 
-  client.subscribe('$name is a $class at $x, $y', obj => {
-    t.deepEqual(obj, {})
+  const subscription = new Promise((resolve, reject) => {
+    client.subscribe(['$name is a $class at $x, $y'], ({assertions, retractions, selections}) => {
+      const gorogFact = assertions[0]
+      t.deepEqual(retractions, [])
+      t.deepEqual(gorogFact.name.value, 'gorog')
+      t.deepEqual(gorogFact.class.value, 'barbarian')
+      t.deepEqual(gorogFact.x.value, 40)
+      t.deepEqual(gorogFact.y.value, 50)
+      resolve()
+    })
   })
-
+  
   client.assert(gorogInitial)
   await client.flushChanges()
+  await subscription
 })

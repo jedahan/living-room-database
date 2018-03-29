@@ -25,21 +25,12 @@ export default class RoomDB extends EventEmitter {
     super()
     this._factMap = new Map()
     this._subscriptions = new Set()
-  }
 
-  /*
-  onAddListener(pattern, callback) {
-    this._subscriptions.add(pattern)
-    this.select(pattern).doAll(callback)
-    return super(pattern, callback)
+    this.on('newListener', (event, _) => {
+      const parsed = JSON.parse(event)
+      this._subscriptions.add(parsed)
+    })
   }
-
-  onRemoveListener(pattern, callback) {
-    this._subscriptions.add(pattern)
-    this.select(pattern).doAll(callback)
-    return super(pattern, callback)
-  }
-  */
 
   select (...jsonPatterns) {
     const patterns = jsonPatterns.map(jsonPattern => Fact.fromJSON(jsonPattern))
@@ -63,24 +54,35 @@ export default class RoomDB extends EventEmitter {
   }
 
   _emitChanges (fn) {
-    // FIXME: does this copy?
     const subscriptions = this._subscriptions
+    /**
+     * beforeFacts: {
+     *  '$name is at $x, $y': Set { } 
+     * }
+     */
     const beforeFacts = new Map()
     subscriptions.forEach(pattern => {
-      this.select(pattern).doAll(solutions => {
-        beforeFacts.set(pattern, new Set(solutions))
-      })
+      const solutions = this.select(...pattern)
+      beforeFacts.set(pattern, new Set(solutions))
     })
-
+    // assert('gorog is at 1, 2')
     fn()
-
+    
+    /**
+     * afterFacts: {
+     *  '$name is at $x, $y': Set{ {name: 'gorog', x: 1, y: 2} }
+     * }
+     */
     const afterFacts = new Map()
     subscriptions.forEach(pattern => {
-      this.select(pattern).doAll(solutions => {
-        afterFacts.set(pattern, new Set(solutions))
-      })
+      const solutions = this.select(...pattern)
+      afterFacts.set(pattern, new Set(solutions))
     })
-
+    /**
+     * {
+     *    assertions: [ {name: 'gorog', x: 1, y: 2} ]
+     * }
+     */
     subscriptions.forEach(pattern => {
       const before = beforeFacts.get(pattern)
       const after = afterFacts.get(pattern)
@@ -88,7 +90,7 @@ export default class RoomDB extends EventEmitter {
       const retractions = Array.from(difference(before, after))
 
       if (assertions.length + retractions.length) {
-        this.emit(pattern, { pattern, assertions, retractions })
+        this.emit(JSON.stringify(pattern), { pattern, assertions, retractions })
       }
     })
   }
@@ -108,6 +110,8 @@ export default class RoomDB extends EventEmitter {
       throw new Error('cannot assert a fact that has variables or wildcards!')
     }
     fact.asserter = clientId
+    const a = new Set()
+    a.keys
     this._factMap.set(fact.toString(), fact)
   }
 
@@ -163,10 +167,5 @@ export default class RoomDB extends EventEmitter {
 
   client (id = 'local-client') {
     return new LocalClient(this, id)
-  }
-
-  subscribe (patterns, cb) {
-    this._subscriptions.add(patterns)
-    this.on(patterns, cb)
   }
 }
