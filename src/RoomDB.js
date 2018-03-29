@@ -164,4 +164,9 @@ export default class RoomDB extends EventEmitter {
   client (id = 'local-client') {
     return new LocalClient(this, id)
   }
+
+  subscribe (patterns, cb) {
+    this._subscriptions.add(patterns)
+    this.on(patterns, cb)
+  }
 }

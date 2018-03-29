@@ -9,8 +9,8 @@ export default class LocalClient extends AbstractClient {
     this._db = db
   }
 
-  subscribe (fn, ...patternStrings) {
-    return this._db.addListener(patternStrings, fn)
+  subscribe (patterns, fn) {
+    return this._db.subscribe(patterns, fn)
   }
 
   select (...patternStrings) {

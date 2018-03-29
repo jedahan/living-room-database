@@ -446,8 +446,8 @@ class LocalClient extends AbstractClient {
     this._db = db;
   }
 
-  subscribe (fn, ...patternStrings) {
-    return this._db.addListener(patternStrings, fn)
+  subscribe (patterns, fn) {
+    return this._db.subscribe(patterns, fn)
   }
 
   select (...patternStrings) {
@@ -543,8 +543,10 @@ class Fact {
   }
 }
 
-Fact.fromJSON = jsonTerms =>
-  new Fact(jsonTerms.map(jsonTerm => Term.fromJSON(jsonTerm)));
+Fact.fromJSON = jsonTerms => {
+  console.dir(jsonTerms);
+  return new Fact(jsonTerms.map(jsonTerm => Term.fromJSON(jsonTerm)))
+};
 
 function flatten (obj) {
   for (let prop in obj) {
@@ -704,6 +706,11 @@ class RoomDB extends EventEmitter {
 
   client (id = 'local-client') {
     return new LocalClient(this, id)
+  }
+
+  subscribe (patterns, cb) {
+    this._subscriptions.add(patterns);
+    this.on(patterns, cb);
   }
 }
 

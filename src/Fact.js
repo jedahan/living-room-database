@@ -32,7 +32,9 @@ class Fact {
   }
 }
 
-Fact.fromJSON = jsonTerms =>
-  new Fact(jsonTerms.map(jsonTerm => Term.fromJSON(jsonTerm)))
+Fact.fromJSON = jsonTerms => {
+  console.dir(jsonTerms)
+  return new Fact(jsonTerms.map(jsonTerm => Term.fromJSON(jsonTerm)))
+}
 
 export default Fact
