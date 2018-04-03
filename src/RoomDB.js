@@ -59,31 +59,43 @@ export default class RoomDB extends EventEmitter {
      *  '$name is at $x, $y': Set { }
      * }
      */
+    let start = new Date()
     const beforeFacts = new Map()
     subscriptions.forEach(jsonPatternString => {
       const jsonPatterns = JSON.parse(jsonPatternString)
       const solutions = this.select(...jsonPatterns)
       beforeFacts.set(jsonPatternString, new Set(solutions.map(JSON.stringify)))
     })
+    let duration = (new Date()) - start
+    console.log(`beforefacts took ${duration}`)
+
     // assert('gorog is at 1, 2')
+    start = new Date()
     fn()
+    duration = (new Date()) - start
+    console.log(`${fn.name} took ${duration}`)
 
     /**
      * afterFacts: {
      *  '$name is at $x, $y': Set{ {name: 'gorog', x: 1, y: 2} }
      * }
      */
+    start = new Date()
     const afterFacts = new Map()
     subscriptions.forEach(jsonPatternString => {
       const jsonPatterns = JSON.parse(jsonPatternString)
       const solutions = this.select(...jsonPatterns)
       afterFacts.set(jsonPatternString, new Set(solutions.map(JSON.stringify)))
     })
+    duration = (new Date()) - start
+    console.log(`after took ${duration}`)
+
     /**
      * {
      *    assertions: [ {name: 'gorog', x: 1, y: 2} ]
      * }
      */
+    start = new Date()
     subscriptions.forEach(jsonPatternString => {
       const before = beforeFacts.get(jsonPatternString);
       const after = afterFacts.get(jsonPatternString);
@@ -96,6 +108,8 @@ export default class RoomDB extends EventEmitter {
         this.emit(jsonPatternString, { pattern: jsonPatternString, assertions, retractions })
       }
     })
+    duration = (new Date()) - start
+    console.log(`subscriptions took ${duration}`)
   }
 
   assert (...args) {
